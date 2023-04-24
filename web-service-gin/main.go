@@ -1,8 +1,8 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +14,11 @@ type album struct {
 	Title  string  `json:"title"`
 	Artist string  `json:"artist"`
 	Price  float64 `json:"price"`
+}
+
+type Weather struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
 // albums slice to seed record album data.
@@ -38,7 +43,6 @@ func getAlbums(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, albums)
 }
 
-// API request
 func getWeather(c *gin.Context) {
 	lat, long := c.Query("lat"), c.Query("long")
 	url := fmt.Sprintf(apiUrl, lat, long)
@@ -49,7 +53,12 @@ func getWeather(c *gin.Context) {
 	}
 
 	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	fmt.Printf("Body: %s\n", body)
-	c.IndentedJSON(http.StatusOK, string(body))
+
+	var weather Weather
+	err = json.NewDecoder(res.Body).Decode(&weather)
+	if err != nil {
+		fmt.Printf("Error: %s", err)
+	}
+
+	c.JSON(http.StatusOK, weather)
 }
